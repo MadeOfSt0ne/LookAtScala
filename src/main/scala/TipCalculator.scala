@@ -5,6 +5,10 @@ object TipCalculator {
     println("Empty list = " + TipCalculator.getTipPercentage(List.empty))
     println("List of 3 = " + TipCalculator.getTipPercentage(List("Alice", "Bob", "Charlie")))
     println("List of 6 = " + TipCalculator.getTipPercentage(List("Alice", "Bob", "Charlie", "Alice", "Bob", "Charlie")))
+
+    assert(getTipPercentage(List("Alice", "Bob")) == 10)
+    assert(getTipPercentage(List("Alice", "Bob", "Charlie", "Danny", "Emily", "Wojtek")) == 20)
+    assert(getTipPercentage(List.empty) == 0)
   }
 
   def getTipPercentage(names: List[String]): Int = {
