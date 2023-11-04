@@ -50,4 +50,40 @@ object Option {
 
     TvShow(name, yearStart, yearEnd)
   }
+
+  def parseShow2(rawShow: String): Option[TvShow] = {
+    for {
+      name      <- extractName(rawShow)
+      yearStart <- extractYearStart(rawShow)
+      yearEnd   <- extractYearEnd(rawShow)
+    } yield TvShow(name, yearStart, yearEnd)
+  }
+
+  private def extractName(rawShow: String): Option[String] ={
+    val bracketOpen = rawShow.indexOf('(')
+    if (bracketOpen != -1) Some(rawShow.substring(0, bracketOpen)) else None
+  }
+
+  private def extractYearStart(rawShow: String): Option[Int] = {
+    val bracketOpen = rawShow.indexOf('(')
+    val dash        = rawShow.indexOf('-')
+    for {
+      yearStr <- if (bracketOpen != -1 && dash > bracketOpen + 1)
+        Some(rawShow.substring(bracketOpen + 1, dash))
+      else None
+      year <- yearStr.toIntOption
+    } yield year
+  }
+
+  private def extractYearEnd(rawShow: String): Option[Int] = {
+    val dash         = rawShow.indexOf('-')
+    val bracketClose = rawShow.indexOf(')')
+    for {
+      yearStr <- if (dash != -1 && bracketClose + 1 > dash)
+        Some(rawShow.substring(dash + 1, bracketClose))
+      else None
+      year <- yearStr.toIntOption
+    } yield year
+  }
+
 }
