@@ -1,31 +1,6 @@
 package org.example
 
 object Option {
-  case class Event(name: String, start: Int, end: Int)
-
-  def parse(name: String, start: Int, end: Int): Option[Event] = {
-    if (name.size > 0 && end < 3000 && start <= end)
-      Some(Event(name, start, end))
-    else
-      None
-  }
-
-  private def validateName(name: String): Option[String] =
-    if (name.size > 0) Some(name) else None
-
-  private def validateEnd(end: Int): Option[Int] =
-    if (end < 3000) Some(end) else None
-
-  private def validateStart(start: Int, end: Int): Option[Int] =
-    if (start <= end) Some(start) else None
-
-  def parse2(name: String, start: Int, end: Int): Option[Event] = {
-    for {
-      validName <- validateName(name)
-      validEnd <- validateEnd(end)
-      validStart <- validateStart(start, end)
-    } yield Event(validName, validStart, validEnd)
-  }
 
   case class TvShow(title: String, start: Int, end: Int)
 
@@ -36,7 +11,9 @@ object Option {
   }
 
   def parseShows(rawShows: List[String]): List[TvShow] = {
-    rawShows.map(parseShow)
+    rawShows
+      .map(parseShow2)
+      .flatMap(_.toList)
   }
 
   private def parseShow(rawShow: String): TvShow = {
@@ -54,14 +31,14 @@ object Option {
   def parseShow2(rawShow: String): Option[TvShow] = {
     for {
       name      <- extractName(rawShow)
-      yearStart <- extractYearStart(rawShow)
-      yearEnd   <- extractYearEnd(rawShow)
+      yearStart <- extractYearStart(rawShow).orElse(extractSingleYear(rawShow))
+      yearEnd   <- extractYearEnd(rawShow).orElse(extractSingleYear(rawShow))
     } yield TvShow(name, yearStart, yearEnd)
   }
 
-  private def extractName(rawShow: String): Option[String] ={
+  private def extractName(rawShow: String): Option[String] = {
     val bracketOpen = rawShow.indexOf('(')
-    if (bracketOpen != -1) Some(rawShow.substring(0, bracketOpen)) else None
+    if (bracketOpen != -1) Some(rawShow.substring(0, bracketOpen).trim) else None
   }
 
   private def extractYearStart(rawShow: String): Option[Int] = {
@@ -71,7 +48,7 @@ object Option {
       yearStr <- if (bracketOpen != -1 && dash > bracketOpen + 1)
         Some(rawShow.substring(bracketOpen + 1, dash))
       else None
-      year <- yearStr.toIntOption
+      year    <- yearStr.toIntOption
     } yield year
   }
 
@@ -82,8 +59,35 @@ object Option {
       yearStr <- if (dash != -1 && bracketClose + 1 > dash)
         Some(rawShow.substring(dash + 1, bracketClose))
       else None
-      year <- yearStr.toIntOption
+      year    <- yearStr.toIntOption
     } yield year
   }
 
+  private def extractSingleYear(rawShow: String): Option[Int] = {
+    val bracketOpen  = rawShow.indexOf('(')
+    val dash         = rawShow.indexOf('-')
+    val bracketClose = rawShow.indexOf(')')
+    for {
+      yearStr <- if (dash == -1 && bracketOpen != -1 && bracketClose > bracketOpen + 1)
+        Some(rawShow.substring(bracketOpen + 1, bracketClose))
+      else None
+      year    <- yearStr.toIntOption
+    } yield year
+  }
+
+  // All or nothing
+  def addOrResign(parsedShows: Option[List[TvShow]], newParsedShow: Option[TvShow]): Option[List[TvShow]] = {
+    for {
+      shows      <- parsedShows
+      parsedShow <- newParsedShow
+    } yield shows.appended(parsedShow)
+  }
+
+  // Свёртка списка значений Option в значение Option со списком
+  def parseShows3(rawShows: List[String]): Option[List[TvShow]] = {
+    val initialResult: Option[List[TvShow]] = Some(List.empty)
+    rawShows
+      .map(parseShow2)
+      .foldLeft(initialResult)(addOrResign)
+  }
 }
