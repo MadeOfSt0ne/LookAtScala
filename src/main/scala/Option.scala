@@ -76,7 +76,7 @@ object Option {
   }
 
   // All or nothing
-  def addOrResign(parsedShows: Option[List[TvShow]], newParsedShow: Option[TvShow]): Option[List[TvShow]] = {
+  private def addOrResign(parsedShows: Option[List[TvShow]], newParsedShow: Option[TvShow]): Option[List[TvShow]] = {
     for {
       shows      <- parsedShows
       parsedShow <- newParsedShow
